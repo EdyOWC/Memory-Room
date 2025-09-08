@@ -1,0 +1,45 @@
+{
+    "name": "Controls",
+    "maps": [
+        {
+            "name": "XR",
+            "id": "ce3c7d5a-662f-4be8-bb23-bdc8118743b7",
+            "actions": [
+                {
+                    "name": "LightLighter",
+                    "type": "Button",
+                    "id": "de0fd24b-7002-4365-8d1f-633e7bf39275",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "c53e2c9a-5953-4c6a-a85c-982895ee5fac",
+                    "path": "<XRController>{RightHand}/primaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LightLighter",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d1e93573-255b-468d-9a85-0492ad22bc0f",
+                    "path": "<XRController>{LeftHand}/primaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LightLighter",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
