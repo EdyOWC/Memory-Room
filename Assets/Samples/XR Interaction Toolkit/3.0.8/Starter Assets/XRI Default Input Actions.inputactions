@@ -3333,6 +3333,94 @@
                     "isPartOfComposite": true
                 }
             ]
+        },
+        {
+            "name": "Hand Animation",
+            "id": "05b406d6-fa61-4e2b-8b5b-22d4371a1d27",
+            "actions": [
+                {
+                    "name": "Left Grab",
+                    "type": "Value",
+                    "id": "2708d6e0-1a89-433c-9e0f-50d52aae366a",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Right Grab",
+                    "type": "Value",
+                    "id": "b3bb4d3d-ccf7-4d2a-afb7-0825a8cb5d5a",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Left Trigger",
+                    "type": "Value",
+                    "id": "630fcf2d-286d-41b2-a270-1efe813a8d26",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Right Trigger",
+                    "type": "Value",
+                    "id": "fe9b21dd-a51f-4c9f-a95b-e4c48b351da2",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "0800e0ba-3af0-421a-9144-dfad4f932db4",
+                    "path": "<XRController>{LeftHand}/{Grip}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Left Grab",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "55aea634-7683-45d7-bd91-cf2edb7f3a9b",
+                    "path": "<XRController>{RightHand}/{Grip}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Right Grab",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ea588ed4-b799-42d2-a868-d066aa6c7948",
+                    "path": "<XRController>{LeftHand}/{Trigger}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Left Trigger",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3a1d1d49-9857-41d0-bf42-f5aa7241ad6f",
+                    "path": "<XRController>{RightHand}/{Trigger}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Right Trigger",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []

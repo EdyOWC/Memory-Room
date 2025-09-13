@@ -13,13 +13,23 @@ public class DrawerMissionGate : MonoBehaviour
     public List<string> missions = new List<string> { "A", "B", "C" };
     private HashSet<string> completedMissions = new HashSet<string>();
 
+    private Rigidbody rb;
+
     void Start()
     {
         if (drawerGrab == null)
             drawerGrab = GetComponent<XRGrabInteractable>();
 
+        rb = GetComponent<Rigidbody>();
+
         if (drawerGrab != null && drawerLockedAtStart)
+        {
             drawerGrab.enabled = false;
+
+            // Lock physics so it can’t be pushed before unlocking
+            if (rb != null)
+                rb.constraints = RigidbodyConstraints.FreezeAll;
+        }
     }
 
     // Call this from mission scripts
@@ -53,6 +63,15 @@ public class DrawerMissionGate : MonoBehaviour
         if (drawerGrab != null && !drawerGrab.enabled)
         {
             drawerGrab.enabled = true;
+
+            if (rb != null)
+            {
+                // Allow movement only on Z (example axis)
+                rb.constraints = RigidbodyConstraints.FreezePositionX |
+                                 RigidbodyConstraints.FreezePositionY |
+                                 RigidbodyConstraints.FreezeRotation;
+            }
+
             Debug.Log("✅ All missions completed — Drawer unlocked!");
         }
     }

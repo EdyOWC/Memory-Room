@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CandleVoiceExtinguisher : MonoBehaviour
 {
@@ -7,26 +7,46 @@ public class CandleVoiceExtinguisher : MonoBehaviour
     public GameObject flame;       // flame GameObject to toggle
 
     [Header("Settings")]
-    public float triggerDistance = 1.5f;   // distance in meters
-    public float voiceThreshold = 0.1f;    // how loud you need to be (0-1)
-    public float checkInterval = 0.1f;     // how often to sample mic
+    public float triggerDistance = 1.5f;
+    public float voiceThreshold = 0.1f;
+    public float checkInterval = 0.1f;
 
     private AudioClip micClip;
     private string micDevice;
     private float nextCheckTime;
 
-    void Start()
+    void OnEnable()
     {
-        // Start microphone recording
+        StartMic();
+    }
+
+    void OnDisable()
+    {
+        StopMic();
+    }
+
+    void StartMic()
+    {
         if (Microphone.devices.Length > 0)
         {
             micDevice = Microphone.devices[0];
             micClip = Microphone.Start(micDevice, true, 1, 44100);
+            Debug.Log("🎤 Microphone started for candle.");
         }
         else
         {
-            Debug.LogWarning("No microphone detected!");
+            Debug.LogWarning("⚠️ No microphone detected!");
         }
+    }
+
+    void StopMic()
+    {
+        if (!string.IsNullOrEmpty(micDevice))
+        {
+            Microphone.End(micDevice);
+            Debug.Log("🛑 Microphone stopped for candle.");
+        }
+        micClip = null;
     }
 
     void Update()
@@ -35,16 +55,17 @@ public class CandleVoiceExtinguisher : MonoBehaviour
         {
             nextCheckTime = Time.time + checkInterval;
 
-            // Check distance
             float distance = Vector3.Distance(player.position, transform.position);
             if (distance <= triggerDistance)
             {
-                // Check voice loudness
                 float level = GetMicLevel();
                 if (level > voiceThreshold)
                 {
-                    if (flame != null) flame.SetActive(false);
-                    Debug.Log("Candle extinguished!");
+                    if (flame != null && flame.activeSelf)
+                    {
+                        flame.SetActive(false);
+                        Debug.Log("🔥 Candle extinguished!");
+                    }
                 }
             }
         }

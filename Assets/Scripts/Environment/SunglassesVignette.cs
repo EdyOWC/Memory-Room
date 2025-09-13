@@ -9,11 +9,11 @@ public class SunglassesVignette : MonoBehaviour
     public XRGrabInteractable grabInteractable;
     public Canvas vignetteCanvas;
     public Image vignetteImage;
-    public Collider headTrigger;                 // sphere collider on XR Camera
-    public Transform head;                       // XR Camera (head)
+    public Collider headTrigger;     // Sphere collider around XR camera
+    public Transform head;           // XR Camera (head)
 
     [Header("Settings")]
-    public Vector3 wornOffset = new Vector3(0f, -0.05f, 0.1f); // adjust to fit face
+    public Vector3 wornOffset = new Vector3(0f, -0.05f, 0.1f);
     public float fadeSpeed = 5f;
 
     private bool isGrabbed = false;
@@ -35,7 +35,9 @@ public class SunglassesVignette : MonoBehaviour
         grabInteractable.selectEntered.AddListener(OnGrab);
         grabInteractable.selectExited.AddListener(OnRelease);
 
-        vignetteCanvas.enabled = true;
+        if (vignetteCanvas != null)
+            vignetteCanvas.enabled = true;
+
         SetAlpha(0f);
     }
 
@@ -43,34 +45,6 @@ public class SunglassesVignette : MonoBehaviour
     {
         grabInteractable.selectEntered.RemoveListener(OnGrab);
         grabInteractable.selectExited.RemoveListener(OnRelease);
-    }
-
-    void OnGrab(SelectEnterEventArgs args)
-    {
-        isGrabbed = true;
-
-        if (isWorn)
-        {
-            // taking them off
-            isWorn = false;
-            targetAlpha = 0f;
-            RestorePhysics();
-            transform.SetParent(originalParent); // detach
-        }
-    }
-
-    void OnRelease(SelectExitEventArgs args)
-    {
-        isGrabbed = false;
-
-        if (isInsideHeadTrigger)
-        {
-            WearGlasses();
-        }
-        else
-        {
-            RestorePhysics(); // drop normally
-        }
     }
 
     void Update()
@@ -85,14 +59,31 @@ public class SunglassesVignette : MonoBehaviour
         }
     }
 
-    private void SetAlpha(float value)
+    // ===== Grab + Release =====
+    void OnGrab(SelectEnterEventArgs args)
     {
-        if (vignetteImage == null) return;
-        Color c = vignetteImage.color;
-        c.a = Mathf.Clamp01(value);
-        vignetteImage.color = c;
+        isGrabbed = true;
+
+        if (isWorn)
+        {
+            // Taking them off
+            isWorn = false;
+            targetAlpha = 0f;
+            RestorePhysics();
+        }
     }
 
+    void OnRelease(SelectExitEventArgs args)
+    {
+        isGrabbed = false;
+
+        if (isInsideHeadTrigger)
+            WearGlasses();
+        else
+            RestorePhysics();
+    }
+
+    // ===== Trigger Detection =====
     private void OnTriggerEnter(Collider other)
     {
         if (other == headTrigger)
@@ -105,16 +96,16 @@ public class SunglassesVignette : MonoBehaviour
             isInsideHeadTrigger = false;
     }
 
+    // ===== Wear & Remove =====
     private void WearGlasses()
     {
         isWorn = true;
 
-        // parent to head so they move with it
+        // Parent to head so they move with it
         transform.SetParent(head);
         transform.localPosition = wornOffset;
         transform.localRotation = Quaternion.identity;
 
-        // freeze physics
         if (rb != null)
             rb.isKinematic = true;
     }
@@ -123,5 +114,18 @@ public class SunglassesVignette : MonoBehaviour
     {
         if (rb != null)
             rb.isKinematic = false;
+
+        // Detach from head if still parented
+        if (transform.parent == head)
+            transform.SetParent(originalParent);
+    }
+
+    // ===== Helpers =====
+    private void SetAlpha(float value)
+    {
+        if (vignetteImage == null) return;
+        Color c = vignetteImage.color;
+        c.a = Mathf.Clamp01(value);
+        vignetteImage.color = c;
     }
 }
