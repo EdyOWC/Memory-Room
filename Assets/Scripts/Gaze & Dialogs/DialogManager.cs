@@ -1,42 +1,46 @@
 ﻿using UnityEngine;
+using System;
 
-[RequireComponent(typeof(AudioSource))]
 public class DialogManager : MonoBehaviour
 {
-    public static DialogManager Instance { get; private set; }
+    public static DialogManager Instance;
 
-    private AudioSource src;
+    private AudioSource audioSource;
+    private Action onFinished;
+
+    public bool IsPlaying => audioSource != null && audioSource.isPlaying;
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
+        audioSource = GetComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+    }
+
+    public bool PlayClip(AudioClip clip, Action finishedCallback = null)
+    {
+        if (IsPlaying) return false; // Prevent overlapping
+
+        if (clip != null)
         {
-            Destroy(gameObject);
-            return;
+            audioSource.clip = clip;
+            audioSource.Play();
+            onFinished = finishedCallback;
+            Invoke(nameof(HandleFinished), clip.length);
+            return true;
         }
-        Instance = this;
-
-        src = GetComponent<AudioSource>();
-        src.playOnAwake = false;
-        src.loop = false;
+        return false;
     }
 
-    /// <summary>
-    /// Tries to play a line. Returns true if it started, false if busy.
-    /// </summary>
-    public bool PlayLine(AudioClip clip)
+    private void HandleFinished()
     {
-        if (clip == null) return false;
-
-        if (src.isPlaying) return false; // busy, reject
-
-        src.clip = clip;
-        src.Play();
-        return true;
-    }
-
-    public bool IsPlaying()
-    {
-        return src.isPlaying;
+        if (!audioSource.isPlaying && onFinished != null)
+        {
+            var callback = onFinished;
+            onFinished = null;
+            callback.Invoke();
+        }
     }
 }

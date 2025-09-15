@@ -6,10 +6,11 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 public class PlaySoundOnGrab : MonoBehaviour
 {
     [Header("Audio Setup")]
-    public AudioSource audioSource;   // Assign in Inspector (on same GO or elsewhere)
+    public AudioSource audioSource;   // Assign in Inspector
     public AudioClip grabSound;       // The clip to play when grabbed
 
     private XRGrabInteractable grab;
+    private static bool isPlaying = false;   // global lock
 
     void Awake()
     {
@@ -25,9 +26,16 @@ public class PlaySoundOnGrab : MonoBehaviour
 
     private void OnGrab(SelectEnterEventArgs args)
     {
-        if (audioSource != null && grabSound != null)
+        if (!isPlaying && audioSource != null && grabSound != null)
         {
             audioSource.PlayOneShot(grabSound);
+            isPlaying = true;
+            Invoke(nameof(ResetLock), grabSound.length);
         }
+    }
+
+    private void ResetLock()
+    {
+        isPlaying = false;
     }
 }

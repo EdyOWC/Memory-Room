@@ -9,10 +9,21 @@ public class DrawerMissionGate : MonoBehaviour
     public XRGrabInteractable drawerGrab;
     public bool drawerLockedAtStart = true;
 
+    [Header("Extra Handle Setup")]
+    public XRGrabInteractable extraGrabObject; // <- assign separate GO here
+
     [Header("Mission Setup")]
     public List<string> missions = new List<string> { "A", "B", "C" };
     private HashSet<string> completedMissions = new HashSet<string>();
 
+    [Header("Feedback")]
+    public AudioSource sfxSource;
+    public AudioClip stuckDrawerSFX;
+    public AudioSource dialogSource;
+    public AudioClip stuckDialogClip;
+
+    private bool dialogPlayed = false;
+    private bool isUnlocked = false;
     private Rigidbody rb;
 
     void Start()
@@ -22,14 +33,42 @@ public class DrawerMissionGate : MonoBehaviour
 
         rb = GetComponent<Rigidbody>();
 
-        if (drawerGrab != null && drawerLockedAtStart)
+        if (drawerGrab != null)
         {
-            drawerGrab.enabled = false;
+            if (drawerLockedAtStart)
+                LockDrawer();
 
-            // Lock physics so it can’t be pushed before unlocking
-            if (rb != null)
-                rb.constraints = RigidbodyConstraints.FreezeAll;
+            drawerGrab.selectEntered.AddListener(_ => OnGrabAttempt());
         }
+
+        if (extraGrabObject != null)
+        {
+            // Keep it disabled until drawer is unlocked
+            extraGrabObject.enabled = false;
+        }
+    }
+
+    private void OnGrabAttempt()
+    {
+        if (!isUnlocked)
+        {
+            // Play SFX every time
+            if (sfxSource != null && stuckDrawerSFX != null)
+                sfxSource.PlayOneShot(stuckDrawerSFX);
+
+            // Play dialog only first time
+            if (!dialogPlayed && dialogSource != null && stuckDialogClip != null)
+            {
+                dialogSource.PlayOneShot(stuckDialogClip);
+                dialogPlayed = true;
+            }
+        }
+    }
+
+    private void LockDrawer()
+    {
+        if (rb != null)
+            rb.constraints = RigidbodyConstraints.FreezeAll;
     }
 
     // Call this from mission scripts
@@ -41,11 +80,9 @@ public class DrawerMissionGate : MonoBehaviour
             return;
         }
 
-        if (!completedMissions.Contains(missionName))
+        if (completedMissions.Add(missionName))
         {
-            completedMissions.Add(missionName);
             Debug.Log($"Mission {missionName} completed!");
-
             CheckAllMissions();
         }
     }
@@ -53,24 +90,24 @@ public class DrawerMissionGate : MonoBehaviour
     private void CheckAllMissions()
     {
         if (completedMissions.Count == missions.Count)
-        {
             UnlockDrawer();
-        }
     }
 
     private void UnlockDrawer()
     {
-        if (drawerGrab != null && !drawerGrab.enabled)
+        if (!isUnlocked)
         {
-            drawerGrab.enabled = true;
+            isUnlocked = true;
 
             if (rb != null)
             {
-                // Allow movement only on Z (example axis)
                 rb.constraints = RigidbodyConstraints.FreezePositionX |
                                  RigidbodyConstraints.FreezePositionY |
                                  RigidbodyConstraints.FreezeRotation;
             }
+
+            if (extraGrabObject != null)
+                extraGrabObject.enabled = true;
 
             Debug.Log("✅ All missions completed — Drawer unlocked!");
         }

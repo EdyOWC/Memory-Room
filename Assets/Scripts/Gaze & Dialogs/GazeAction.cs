@@ -15,7 +15,7 @@ public class GazeAction : MonoBehaviour, ILookAt
         if (clip != null && DialogManager.Instance != null)
         {
             // Only mark as played if manager accepted it
-            bool started = DialogManager.Instance.PlayLine(clip);
+            bool started = DialogManager.Instance.PlayClip(clip);
             if (started)
             {
                 hasPlayed = true;

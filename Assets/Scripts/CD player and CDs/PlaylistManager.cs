@@ -1,43 +1,50 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
 public class PlaylistManager : MonoBehaviour
 {
     public List<AudioClip> playlist;
-    public bool loopPlaylist = true;   // go back to first after last
+    public bool loopPlaylist = true;
 
     private AudioSource src;
     private int index = 0;
+
+    public bool IsPlaying => src != null && src.isPlaying;
 
     void Awake()
     {
         src = GetComponent<AudioSource>();
         src.playOnAwake = false;
-        src.loop = false;              // important: we advance manually
-        src.spatialBlend = 1f;         // 3D
+        src.loop = false;
+        src.spatialBlend = 1f;
     }
 
-    void Start()
-    {
-        if (playlist.Count > 0)
-        {
-            src.clip = playlist[0];
-            src.Play();
-        }
-    }
+    // 🚫 Removed auto-start in Start()
+    // Music will only play if PlayFirst() / TogglePlay() is called
 
     void Update()
     {
-        // when current song ends, advance
-        if (!src.isPlaying && src.clip != null)
+        // Only auto-advance if music is already playing
+        if (src.clip != null && !src.isPlaying && src.time > 0f)
+        {
             Next();
+        }
     }
 
     public void TogglePlay()
     {
         if (src.isPlaying) src.Pause();
-        else src.Play();
+        else if (src.clip != null) src.Play();
+        else PlayFirst();
+    }
+
+    public void PlayFirst()
+    {
+        if (playlist.Count == 0) return;
+        index = 0;
+        src.clip = playlist[index];
+        src.Play();
     }
 
     public void Next()
@@ -51,7 +58,6 @@ public class PlaylistManager : MonoBehaviour
         }
         else
         {
-            // pick a random index different from the current one
             do
             {
                 nextIndex = Random.Range(0, playlist.Count);
@@ -63,5 +69,4 @@ public class PlaylistManager : MonoBehaviour
         src.clip = playlist[index];
         src.Play();
     }
-
 }
