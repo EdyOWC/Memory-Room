@@ -12,6 +12,9 @@ public class MultiGrabSceneTrigger : MonoBehaviour
     public List<GameObject> objectsToEnable;
     public List<GameObject> objectsToDisable;
 
+    [Header("Skybox Settings")]
+    public Material skyboxToSet;   // assign ONE material in Inspector
+
     [Header("Settings")]
     public int requiredUniqueGrabs = 3;
 
@@ -56,10 +59,19 @@ public class MultiGrabSceneTrigger : MonoBehaviour
 
     private void ChangeScenery()
     {
+        // Toggle objects
         foreach (var go in objectsToEnable)
             if (go != null) go.SetActive(true);
 
         foreach (var go in objectsToDisable)
             if (go != null) go.SetActive(false);
+
+        // Change skybox once
+        if (skyboxToSet != null)
+        {
+            RenderSettings.skybox = skyboxToSet;
+            DynamicGI.UpdateEnvironment();
+            Debug.Log("Skybox switched to: " + skyboxToSet.name);
+        }
     }
 }

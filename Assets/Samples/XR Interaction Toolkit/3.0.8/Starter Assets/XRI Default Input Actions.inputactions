@@ -3421,6 +3421,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "XRI RightHand Interaction",
+            "id": "a3ba1ca3-15ec-4239-a02f-bb6027e55696",
+            "actions": [
+                {
+                    "name": "SecondaryButton",
+                    "type": "Button",
+                    "id": "4a8db4ba-17ee-491d-bed9-f457b6d018ff",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "6e929233-1e68-4221-9556-fe2265b394e7",
+                    "path": "<OculusTouchController>{RightHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SecondaryButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []
