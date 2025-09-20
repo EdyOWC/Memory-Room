@@ -8,6 +8,7 @@ TagManager:
   - LighterFlame
   - GrabbableCD
   - Golden
+  - WillZoneTrigger
   layers:
   - Default
   - TransparentFX

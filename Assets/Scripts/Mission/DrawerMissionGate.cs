@@ -1,8 +1,4 @@
-﻿
-
-
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -14,7 +10,7 @@ public class DrawerMissionGate : MonoBehaviour
     public bool drawerLockedAtStart = true;
 
     [Header("Extra Handle Setup")]
-    public XRGrabInteractable extraGrabObject; // <- assign separate GO here
+    public XRGrabInteractable extraGrabObject;
 
     [Header("Mission Setup")]
     public List<string> missions = new List<string> { "A", "B", "C" };
@@ -26,41 +22,46 @@ public class DrawerMissionGate : MonoBehaviour
     public AudioSource dialogSource;
     public AudioClip stuckDialogClip;
 
+    [Header("Peek Movement")]
+    public Transform moveTarget;               // GO to move (e.g. drawer body)
+    public Vector3 startPos;                   // local pos A
+    public Vector3 endPos;                     // local pos B
+    public float moveDuration = 1.5f;
+
     private bool dialogPlayed = false;
     private bool isUnlocked = false;
     private Rigidbody rb;
+    private bool isMoving = false;
+    private float moveTimer = 0f;
 
     void Start()
     {
         if (drawerGrab == null)
             drawerGrab = GetComponent<XRGrabInteractable>();
 
-        rb = GetComponent<Rigidbody>();
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+
+        if (drawerLockedAtStart)
+            LockDrawer();
 
         if (drawerGrab != null)
-        {
-            if (drawerLockedAtStart)
-                LockDrawer();
-
             drawerGrab.selectEntered.AddListener(_ => OnGrabAttempt());
-        }
 
         if (extraGrabObject != null)
-        {
-            // Keep it disabled until drawer is unlocked
             extraGrabObject.enabled = false;
-        }
+
+        if (moveTarget != null)
+            moveTarget.localPosition = startPos;
     }
 
     private void OnGrabAttempt()
     {
         if (!isUnlocked)
         {
-            // Play SFX every time
             if (sfxSource != null && stuckDrawerSFX != null)
                 sfxSource.PlayOneShot(stuckDrawerSFX);
 
-            // Play dialog only first time
             if (!dialogPlayed && dialogSource != null && stuckDialogClip != null)
             {
                 dialogSource.PlayOneShot(stuckDialogClip);
@@ -75,7 +76,6 @@ public class DrawerMissionGate : MonoBehaviour
             rb.constraints = RigidbodyConstraints.FreezeAll;
     }
 
-    // Call this from mission scripts
     public void CompleteMission(string missionName)
     {
         if (!missions.Contains(missionName))
@@ -99,24 +99,40 @@ public class DrawerMissionGate : MonoBehaviour
 
     private void UnlockDrawer()
     {
-        if (!isUnlocked)
+        if (isUnlocked) return;
+
+        isUnlocked = true;
+
+        if (rb != null)
         {
-            isUnlocked = true;
+            rb.constraints = RigidbodyConstraints.FreezePositionX |
+                             RigidbodyConstraints.FreezePositionY |
+                             RigidbodyConstraints.FreezeRotation;
+        }
 
-            if (rb != null)
-            {
-                rb.constraints = RigidbodyConstraints.FreezePositionX |
-                                 RigidbodyConstraints.FreezePositionY |
-                                 RigidbodyConstraints.FreezeRotation;
-            }
+        if (extraGrabObject != null)
+            extraGrabObject.enabled = true;
 
-            if (extraGrabObject != null)
-                extraGrabObject.enabled = true;
+        if (moveTarget != null)
+        {
+            moveTimer = 0f;
+            isMoving = true;
+        }
 
-            Debug.Log("✅ All missions completed — Drawer unlocked!");
+        Debug.Log("✅ All missions completed — Drawer unlocked (moving)!");
+    }
+
+    void Update()
+    {
+        if (isMoving && moveTarget != null)
+        {
+            moveTimer += Time.deltaTime;
+            float t = Mathf.Clamp01(moveTimer / moveDuration);
+            float easedT = Mathf.SmoothStep(0, 1, t);
+            moveTarget.localPosition = Vector3.Lerp(startPos, endPos, easedT);
+
+            if (t >= 1f)
+                isMoving = false;
         }
     }
 }
-
-
-
