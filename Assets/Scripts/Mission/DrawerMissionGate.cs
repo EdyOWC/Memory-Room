@@ -8,9 +8,17 @@ public class DrawerMissionGate : MonoBehaviour
     [Header("Drawer Setup")]
     public XRGrabInteractable drawerGrab;
     public bool drawerLockedAtStart = true;
+    public Rigidbody drawerRb;
 
-    [Header("Extra Handle Setup")]
-    public XRGrabInteractable extraGrabObject;
+    [Header("Will Setup")]
+    public XRGrabInteractable willGrabObject;   // The object inside the drawer (Will)
+
+    [Header("Relock Setup")]
+    public Collider relockTrigger;              // The "stopper" in the desk
+    public Collider drawerBackMarker;           // Small trigger collider at the back of the drawer
+
+    [Header("Extra Unlock Setup")]
+    public GameObject extraObjectToEnable;      // Any GO you want to enable when re-locked
 
     [Header("Mission Setup")]
     public List<string> missions = new List<string> { "A", "B", "C" };
@@ -23,14 +31,14 @@ public class DrawerMissionGate : MonoBehaviour
     public AudioClip stuckDialogClip;
 
     [Header("Peek Movement")]
-    public Transform moveTarget;               // GO to move (e.g. drawer body)
-    public Vector3 startPos;                   // local pos A
-    public Vector3 endPos;                     // local pos B
+    public Transform moveTarget;  // GO to move (e.g. drawer body)
+    public Vector3 startPos;      // local pos A
+    public Vector3 endPos;        // local pos B
     public float moveDuration = 1.5f;
 
     private bool dialogPlayed = false;
     private bool isUnlocked = false;
-    private Rigidbody rb;
+    private bool isRelocked = false;
     private bool isMoving = false;
     private float moveTimer = 0f;
 
@@ -39,8 +47,8 @@ public class DrawerMissionGate : MonoBehaviour
         if (drawerGrab == null)
             drawerGrab = GetComponent<XRGrabInteractable>();
 
-        if (rb == null)
-            rb = GetComponent<Rigidbody>();
+        if (drawerRb == null)
+            drawerRb = GetComponent<Rigidbody>();
 
         if (drawerLockedAtStart)
             LockDrawer();
@@ -48,8 +56,13 @@ public class DrawerMissionGate : MonoBehaviour
         if (drawerGrab != null)
             drawerGrab.selectEntered.AddListener(_ => OnGrabAttempt());
 
-        if (extraGrabObject != null)
-            extraGrabObject.enabled = false;
+        // Will should NOT be grabbable at start
+        if (willGrabObject != null)
+            willGrabObject.enabled = false;
+
+        // Extra GO should be disabled at start
+        if (extraObjectToEnable != null)
+            extraObjectToEnable.SetActive(false);
 
         if (moveTarget != null)
             moveTarget.localPosition = startPos;
@@ -72,8 +85,53 @@ public class DrawerMissionGate : MonoBehaviour
 
     private void LockDrawer()
     {
-        if (rb != null)
-            rb.constraints = RigidbodyConstraints.FreezeAll;
+        if (drawerRb != null)
+            drawerRb.constraints = RigidbodyConstraints.FreezeAll;
+    }
+
+    private void UnlockDrawer()
+    {
+        if (isUnlocked) return;
+
+        isUnlocked = true;
+        isRelocked = false;
+
+        if (drawerRb != null)
+        {
+            drawerRb.constraints = RigidbodyConstraints.FreezePositionX |
+                                   RigidbodyConstraints.FreezePositionY |
+                                   RigidbodyConstraints.FreezeRotation;
+        }
+
+        Debug.Log("✅ All missions completed — Drawer unlocked!");
+        StartPeekMove();
+    }
+
+    private void RelockDrawer()
+    {
+        if (!isUnlocked) return; // ignore if never unlocked
+
+        LockDrawer();
+        isRelocked = true;
+
+        // Now the Will becomes grabbable
+        if (willGrabObject != null)
+            willGrabObject.enabled = true;
+
+        // Enable extra GO
+        if (extraObjectToEnable != null)
+            extraObjectToEnable.SetActive(true);
+
+        Debug.Log("🔒 Drawer re-locked — Will and extra GO are now enabled!");
+    }
+
+    private void StartPeekMove()
+    {
+        if (moveTarget != null)
+        {
+            moveTimer = 0f;
+            isMoving = true;
+        }
     }
 
     public void CompleteMission(string missionName)
@@ -87,39 +145,9 @@ public class DrawerMissionGate : MonoBehaviour
         if (completedMissions.Add(missionName))
         {
             Debug.Log($"Mission {missionName} completed!");
-            CheckAllMissions();
+            if (completedMissions.Count == missions.Count)
+                UnlockDrawer();
         }
-    }
-
-    private void CheckAllMissions()
-    {
-        if (completedMissions.Count == missions.Count)
-            UnlockDrawer();
-    }
-
-    private void UnlockDrawer()
-    {
-        if (isUnlocked) return;
-
-        isUnlocked = true;
-
-        if (rb != null)
-        {
-            rb.constraints = RigidbodyConstraints.FreezePositionX |
-                             RigidbodyConstraints.FreezePositionY |
-                             RigidbodyConstraints.FreezeRotation;
-        }
-
-        if (extraGrabObject != null)
-            extraGrabObject.enabled = true;
-
-        if (moveTarget != null)
-        {
-            moveTimer = 0f;
-            isMoving = true;
-        }
-
-        Debug.Log("✅ All missions completed — Drawer unlocked (moving)!");
     }
 
     void Update()
@@ -133,6 +161,18 @@ public class DrawerMissionGate : MonoBehaviour
 
             if (t >= 1f)
                 isMoving = false;
+        }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        // Relock only if the back marker touches the stopper
+        if (drawerBackMarker != null && relockTrigger != null)
+        {
+            if (other == relockTrigger)
+            {
+                RelockDrawer();
+            }
         }
     }
 }

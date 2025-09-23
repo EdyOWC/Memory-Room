@@ -9,6 +9,7 @@ TagManager:
   - GrabbableCD
   - Golden
   - WillZoneTrigger
+  - DrawerStopper
   layers:
   - Default
   - TransparentFX
