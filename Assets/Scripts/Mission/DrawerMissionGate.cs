@@ -17,9 +17,6 @@ public class DrawerMissionGate : MonoBehaviour
     public Collider relockTrigger;              // The "stopper" in the desk
     public Collider drawerBackMarker;           // Small trigger collider at the back of the drawer
 
-    [Header("Extra Unlock Setup")]
-    public GameObject extraObjectToEnable;      // Any GO you want to enable when re-locked
-
     [Header("Mission Setup")]
     public List<string> missions = new List<string> { "A", "B", "C" };
     private HashSet<string> completedMissions = new HashSet<string>();
@@ -35,6 +32,10 @@ public class DrawerMissionGate : MonoBehaviour
     public Vector3 startPos;      // local pos A
     public Vector3 endPos;        // local pos B
     public float moveDuration = 1.5f;
+
+    [Header("Animation Setup")]
+    public Animator animator;                  // Animator that controls DARKER/AfterWillGrab
+    public string relockTriggerName = "Dark";  // Trigger name for DARKER animation
 
     private bool dialogPlayed = false;
     private bool isUnlocked = false;
@@ -59,10 +60,6 @@ public class DrawerMissionGate : MonoBehaviour
         // Will should NOT be grabbable at start
         if (willGrabObject != null)
             willGrabObject.enabled = false;
-
-        // Extra GO should be disabled at start
-        if (extraObjectToEnable != null)
-            extraObjectToEnable.SetActive(false);
 
         if (moveTarget != null)
             moveTarget.localPosition = startPos;
@@ -118,11 +115,11 @@ public class DrawerMissionGate : MonoBehaviour
         if (willGrabObject != null)
             willGrabObject.enabled = true;
 
-        // Enable extra GO
-        if (extraObjectToEnable != null)
-            extraObjectToEnable.SetActive(true);
+        // 🔹 Instead of enabling a GO, play the DARKER animation
+        if (animator != null && !string.IsNullOrEmpty(relockTriggerName))
+            animator.SetTrigger(relockTriggerName);
 
-        Debug.Log("🔒 Drawer re-locked — Will and extra GO are now enabled!");
+        Debug.Log("🔒 Drawer re-locked — DARKER animation triggered, Will enabled!");
     }
 
     private void StartPeekMove()
