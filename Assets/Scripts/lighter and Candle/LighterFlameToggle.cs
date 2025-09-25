@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 public class LighterFlameToggle : MonoBehaviour
 {
@@ -12,6 +14,11 @@ public class LighterFlameToggle : MonoBehaviour
     [Header("Audio")]
     public AudioSource ignitionSource;   // short ignition "click"
     public AudioSource burningSource;    // looping flame sound
+
+    [Header("XR")]
+    public XRGrabInteractable grabInteractable;
+
+    private bool isGrabbed = false;
 
     private void Start()
     {
@@ -27,8 +34,14 @@ public class LighterFlameToggle : MonoBehaviour
         if (lightAction != null)
         {
             lightAction.action.Enable();
-            lightAction.action.started += TurnOnFlame;
-            lightAction.action.canceled += TurnOffFlame;
+            lightAction.action.started += TryTurnOnFlame;
+            lightAction.action.canceled += TryTurnOffFlame;
+        }
+
+        if (grabInteractable != null)
+        {
+            grabInteractable.selectEntered.AddListener(OnGrabbed);
+            grabInteractable.selectExited.AddListener(OnReleased);
         }
     }
 
@@ -36,32 +49,57 @@ public class LighterFlameToggle : MonoBehaviour
     {
         if (lightAction != null)
         {
-            lightAction.action.started -= TurnOnFlame;
-            lightAction.action.canceled -= TurnOffFlame;
+            lightAction.action.started -= TryTurnOnFlame;
+            lightAction.action.canceled -= TryTurnOffFlame;
             lightAction.action.Disable();
+        }
+
+        if (grabInteractable != null)
+        {
+            grabInteractable.selectEntered.RemoveListener(OnGrabbed);
+            grabInteractable.selectExited.RemoveListener(OnReleased);
         }
     }
 
-    private void TurnOnFlame(InputAction.CallbackContext ctx)
+    private void OnGrabbed(SelectEnterEventArgs args)
+    {
+        isGrabbed = true;
+    }
+
+    private void OnReleased(SelectExitEventArgs args)
+    {
+        isGrabbed = false;
+        // Auto turn off when released
+        TurnOffFlame();
+    }
+
+    private void TryTurnOnFlame(InputAction.CallbackContext ctx)
+    {
+        if (isGrabbed) TurnOnFlame();
+    }
+
+    private void TryTurnOffFlame(InputAction.CallbackContext ctx)
+    {
+        if (isGrabbed) TurnOffFlame();
+    }
+
+    private void TurnOnFlame()
     {
         Debug.Log("Flame ON");
         if (flame != null) flame.SetActive(true);
 
-        // play ignition SFX once
         if (ignitionSource != null)
             ignitionSource.PlayOneShot(ignitionSource.clip);
 
-        // start looping burning sound
         if (burningSource != null && !burningSource.isPlaying)
             burningSource.Play();
     }
 
-    private void TurnOffFlame(InputAction.CallbackContext ctx)
+    private void TurnOffFlame()
     {
         Debug.Log("Flame OFF");
         if (flame != null) flame.SetActive(false);
 
-        // stop burning sound
         if (burningSource != null && burningSource.isPlaying)
             burningSource.Stop();
     }
