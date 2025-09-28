@@ -11,11 +11,11 @@ public class DrawerMissionGate : MonoBehaviour
     public Rigidbody drawerRb;
 
     [Header("Will Setup")]
-    public XRGrabInteractable willGrabObject;   // The object inside the drawer (Will)
+    public XRGrabInteractable willGrabObject;
 
     [Header("Relock Setup")]
-    public Collider relockTrigger;              // The "stopper" in the desk
-    public Collider drawerBackMarker;           // Small trigger collider at the back of the drawer
+    public Collider relockTrigger;
+    public Collider drawerBackMarker;
 
     [Header("Mission Setup")]
     public List<string> missions = new List<string> { "A", "B", "C" };
@@ -27,21 +27,35 @@ public class DrawerMissionGate : MonoBehaviour
     public AudioSource dialogSource;
     public AudioClip stuckDialogClip;
 
+    [Header("Music Control")]
+    public AudioSource musicSource;
+    [Range(0f, 1f)] public float dimmedVolume = 0.3f;
+    public float fadeSpeed = 2f;
+
     [Header("Peek Movement")]
-    public Transform moveTarget;  // GO to move (e.g. drawer body)
-    public Vector3 startPos;      // local pos A
-    public Vector3 endPos;        // local pos B
+    public Transform moveTarget;
+    public Vector3 startPos;
+    public Vector3 endPos;
     public float moveDuration = 1.5f;
 
     [Header("Animation Setup")]
-    public Animator animator;                  // Animator that controls DARKER/AfterWillGrab
-    public string relockTriggerName = "Dark";  // Trigger name for DARKER animation
+    public Animator animator;
+    public string relockTriggerName = "Dark";
+
+    [Header("Fog Setup")]
+    public bool changeFogOnRelock = true;
+    public bool fogEnabledOnRelock = false;
+    public bool revertFogOnUnlock = false;
+    private bool originalFogState;
 
     private bool dialogPlayed = false;
     private bool isUnlocked = false;
     private bool isRelocked = false;
     private bool isMoving = false;
     private float moveTimer = 0f;
+
+    private float musicTargetVolume;
+    private float musicOriginalVolume;
 
     void Start()
     {
@@ -57,12 +71,19 @@ public class DrawerMissionGate : MonoBehaviour
         if (drawerGrab != null)
             drawerGrab.selectEntered.AddListener(_ => OnGrabAttempt());
 
-        // Will should NOT be grabbable at start
         if (willGrabObject != null)
             willGrabObject.enabled = false;
 
         if (moveTarget != null)
             moveTarget.localPosition = startPos;
+
+        originalFogState = RenderSettings.fog;
+
+        if (musicSource != null)
+        {
+            musicOriginalVolume = musicSource.volume;
+            musicTargetVolume = musicOriginalVolume;
+        }
     }
 
     private void OnGrabAttempt()
@@ -72,10 +93,17 @@ public class DrawerMissionGate : MonoBehaviour
             if (sfxSource != null && stuckDrawerSFX != null)
                 sfxSource.PlayOneShot(stuckDrawerSFX);
 
-            if (!dialogPlayed && dialogSource != null && stuckDialogClip != null)
+            if (!dialogPlayed && stuckDialogClip != null)
             {
-                dialogSource.PlayOneShot(stuckDialogClip);
-                dialogPlayed = true;
+                if (dialogSource != null && !dialogSource.isPlaying)
+                {
+                    dialogSource.PlayOneShot(stuckDialogClip);
+                    dialogPlayed = true;
+                }
+                else
+                {
+                    Debug.Log("Stuck dialog skipped (source busy).");
+                }
             }
         }
     }
@@ -102,24 +130,32 @@ public class DrawerMissionGate : MonoBehaviour
 
         Debug.Log("✅ All missions completed — Drawer unlocked!");
         StartPeekMove();
+
+        if (revertFogOnUnlock)
+            RenderSettings.fog = originalFogState;
     }
 
     private void RelockDrawer()
     {
-        if (!isUnlocked) return; // ignore if never unlocked
+        if (!isUnlocked) return;
 
         LockDrawer();
         isRelocked = true;
 
-        // Now the Will becomes grabbable
         if (willGrabObject != null)
             willGrabObject.enabled = true;
 
-        // 🔹 Instead of enabling a GO, play the DARKER animation
         if (animator != null && !string.IsNullOrEmpty(relockTriggerName))
             animator.SetTrigger(relockTriggerName);
 
-        Debug.Log("🔒 Drawer re-locked — DARKER animation triggered, Will enabled!");
+        if (changeFogOnRelock)
+            RenderSettings.fog = fogEnabledOnRelock;
+
+        // Dim music on relock
+        if (musicSource != null)
+            musicTargetVolume = dimmedVolume;
+
+        Debug.Log("🔒 Drawer re-locked — DARKER animation + Fog updated, Will enabled + Music dimmed!");
     }
 
     private void StartPeekMove()
@@ -149,6 +185,7 @@ public class DrawerMissionGate : MonoBehaviour
 
     void Update()
     {
+        // Peek movement
         if (isMoving && moveTarget != null)
         {
             moveTimer += Time.deltaTime;
@@ -159,11 +196,16 @@ public class DrawerMissionGate : MonoBehaviour
             if (t >= 1f)
                 isMoving = false;
         }
+
+        // Smooth music fade
+        if (musicSource != null && !Mathf.Approximately(musicSource.volume, musicTargetVolume))
+        {
+            musicSource.volume = Mathf.MoveTowards(musicSource.volume, musicTargetVolume, fadeSpeed * Time.deltaTime);
+        }
     }
 
     void OnTriggerEnter(Collider other)
     {
-        // Relock only if the back marker touches the stopper
         if (drawerBackMarker != null && relockTrigger != null)
         {
             if (other == relockTrigger)

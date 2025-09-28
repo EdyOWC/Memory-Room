@@ -9,4 +9,8 @@ public class EnvironmentManager : MonoBehaviour
     {
         environment3.SetActive(true);
     }
+    public void DisableSelf()
+    {
+        gameObject.SetActive(false);
+    }
 }
