@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Collider))]
@@ -7,6 +7,9 @@ public class NPCHugAndWalkSimple : MonoBehaviour
     [Header("Player")]
     public Transform playerRoot;
     public string playerTag = "Player";
+
+    [Tooltip("Assign the locomotion GameObject or component root (e.g., ActionBasedContinuousMoveProvider, CharacterController, or XR Locomotion System).")]
+    public Behaviour locomotionComponent; // any locomotion script to disable
 
     [Header("NPC")]
     public Animator npcAnimator;
@@ -59,6 +62,9 @@ public class NPCHugAndWalkSimple : MonoBehaviour
 
     private IEnumerator HugSequence()
     {
+        // 🔒 Lock player locomotion
+        SetLocomotionEnabled(false);
+
         // Start Hug-1
         if (npcAnimator) npcAnimator.SetTrigger(hug1Trigger);
 
@@ -69,14 +75,19 @@ public class NPCHugAndWalkSimple : MonoBehaviour
         // Wait Hug-1 duration
         yield return new WaitForSeconds(hug1Duration);
 
-        // Wait extra buffer
+        // Extra buffer (holding hug)
         yield return new WaitForSeconds(hugBuffer);
 
         // Now trigger Hug-2 manually
         if (npcAnimator) npcAnimator.SetTrigger(hug2Trigger);
 
-        // After Hug-2/Turn anims, walking will begin automatically
-        yield return null;
+        // Hug-2 should have its own duration in the Animator.
+        // We'll unlock locomotion once Hug-2 is complete.
+        // For simplicity, assume Hug-2 is similar length as Hug-1:
+        yield return new WaitForSeconds(hug1Duration);
+
+        // 🔓 Unlock player locomotion after Hug-2
+        SetLocomotionEnabled(true);
     }
 
     private void Update()
@@ -108,5 +119,11 @@ public class NPCHugAndWalkSimple : MonoBehaviour
     public void BeginWalking()
     {
         walking = true;
+    }
+
+    private void SetLocomotionEnabled(bool enable)
+    {
+        if (locomotionComponent != null)
+            locomotionComponent.enabled = enable;
     }
 }

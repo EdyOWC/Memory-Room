@@ -21,6 +21,10 @@ public class CreditsSequence : MonoBehaviour
     public float fadeDuration = 2f;     // fade speed for vignette and logos
     public bool autoStart = true;
 
+    [Header("Player Control")]
+    [Tooltip("Assign your locomotion script(s) here (e.g., ContinuousMoveProviderBase, TeleportationProvider, etc.)")]
+    public Behaviour[] locomotionScripts;
+
     void OnEnable()
     {
         if (autoStart) StartSequence();
@@ -33,6 +37,9 @@ public class CreditsSequence : MonoBehaviour
 
     IEnumerator RunCredits()
     {
+        // 🔒 Disable locomotion at start
+        SetLocomotionEnabled(false);
+
         // Opening credits → start black
         // Closing credits → start transparent, fade to white
         vignetteGroup.alpha = (type == CreditType.Opening) ? 1f : 0f;
@@ -72,6 +79,9 @@ public class CreditsSequence : MonoBehaviour
             yield return FadeVignette(1f, 0f);
             gameObject.SetActive(false); // done
         }
+
+        // 🔓 Re-enable locomotion at end
+        SetLocomotionEnabled(true);
     }
 
     IEnumerator FadeVignette(float from, float to)
@@ -96,5 +106,15 @@ public class CreditsSequence : MonoBehaviour
             yield return null;
         }
         cg.alpha = to;
+    }
+
+    private void SetLocomotionEnabled(bool enabled)
+    {
+        if (locomotionScripts == null) return;
+
+        foreach (var script in locomotionScripts)
+        {
+            if (script != null) script.enabled = enabled;
+        }
     }
 }
