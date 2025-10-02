@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.nosuchstudio.rtltmpro": {
+      "version": "file:D:/ChromeDownloads/RTLTMPro-master/RTLTMPro-master/UPMPackage",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.2d.animation": {
       "version": "10.1.3",
       "depth": 1,

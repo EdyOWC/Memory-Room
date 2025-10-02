@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.nosuchstudio.rtltmpro": "file:D:/ChromeDownloads/RTLTMPro-master/RTLTMPro-master/UPMPackage",
     "com.unity.burst": "1.8.18",
     "com.unity.collab-proxy": "2.7.1",
     "com.unity.collections": "2.5.1",
