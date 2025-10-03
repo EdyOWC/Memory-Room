@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Video;
 using System.Collections;
 
 public class CreditsSequence : MonoBehaviour
@@ -15,11 +16,13 @@ public class CreditsSequence : MonoBehaviour
     [Header("Setup")]
     public CanvasGroup vignetteGroup;   // the black/white background vignette
     public CreditEntry[] credits;       // list of logos/credits in order
+    public VideoPlayer openingVideo;    // optional video for opening credits
 
     [Header("Settings")]
     public CreditType type = CreditType.Opening;
     public float fadeDuration = 2f;     // fade speed for vignette and logos
     public bool autoStart = true;
+    public float quitDelay = 3f;        // delay before app quit (closing credits)
 
     [Header("Player Control")]
     [Tooltip("Assign your locomotion script(s) here (e.g., ContinuousMoveProviderBase, TeleportationProvider, etc.)")]
@@ -49,6 +52,19 @@ public class CreditsSequence : MonoBehaviour
         if (type == CreditType.Closing)
             yield return FadeVignette(0f, 1f);
 
+        // ---- Opening video (optional) ----
+        if (type == CreditType.Opening && openingVideo != null)
+        {
+            openingVideo.gameObject.SetActive(true);
+            openingVideo.Play();
+
+            // Wait until video finishes
+            while (openingVideo.isPlaying)
+                yield return null;
+
+            openingVideo.gameObject.SetActive(false);
+        }
+
         // ---- Run through logos/credits ----
         foreach (var entry in credits)
         {
@@ -73,15 +89,26 @@ public class CreditsSequence : MonoBehaviour
             entry.creditObject.SetActive(false);
         }
 
-        // For opening → fade vignette out to reveal scene
         if (type == CreditType.Opening)
         {
+            // Opening → fade vignette out to reveal scene
             yield return FadeVignette(1f, 0f);
-            gameObject.SetActive(false); // done
-        }
+            gameObject.SetActive(false);
 
-        // 🔓 Re-enable locomotion at end
-        SetLocomotionEnabled(true);
+            // 🔓 Re-enable locomotion only for opening
+            SetLocomotionEnabled(true);
+        }
+        else if (type == CreditType.Closing)
+        {
+            // Closing → vignette stays white, then quit app
+            yield return new WaitForSeconds(quitDelay);
+
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;   // stops play mode in editor
+#else
+            Application.Quit();   // quits app in build
+#endif
+        }
     }
 
     IEnumerator FadeVignette(float from, float to)
