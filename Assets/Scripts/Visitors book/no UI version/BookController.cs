@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // for XR controller inputs
 
 public class BookController : MonoBehaviour
 {
@@ -24,48 +24,34 @@ public class BookController : MonoBehaviour
     public float pageFlipSpeed = 0.5f;
     public bool invertPageDirection = false;
 
-    [Header("Debug / Desktop")]
-    public bool debugMode = true;
-    public KeyCode grabTestKey = KeyCode.G;
-    public KeyCode flipTestKey = KeyCode.A;
-    public KeyCode releaseTestKey = KeyCode.R; // 🔹 press R to simulate release
-    public float holdToFlipSeconds = 0.5f;
+    [Header("UI Control")]
+    public GameObject bookUI; // 🔹 assign your UI GO here (Canvas or any GO)
 
     private bool coverOpen = false;
     private bool flippingPage = false;
     private int currentPageIndex = 0;
-    private float holdTimer = 0f;
 
-    void Update()
+    private InputAction flipAction;
+
+    void OnEnable()
     {
-        if (debugMode)
-        {
-            // Simulate Grab (G)
-            if (Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
-                OnGrabbed();
+        // Bind A button (primary button on Oculus/Quest right controller)
+        flipAction = new InputAction("FlipPage", binding: "<XRController>{RightHand}/primaryButton");
+        flipAction.performed += ctx => TryFlipPage();
+        flipAction.Enable();
+    }
 
-            // Simulate Page Flip (A)
-            bool aHeld = Keyboard.current != null && Keyboard.current.aKey.isPressed;
-            if (aHeld)
-            {
-                holdTimer += Time.deltaTime;
-                if (holdTimer >= holdToFlipSeconds && !flippingPage)
-                {
-                    StartCoroutine(FlipPage());
-                    holdTimer = 0f;
-                }
-            }
-            else holdTimer = 0f;
-
-            // Simulate Release (R)
-            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-                OnReleased();
-        }
+    void OnDisable()
+    {
+        flipAction?.Disable();
     }
 
     // 🟢 Called when the book is grabbed
     public void OnGrabbed()
     {
+        if (bookUI != null)
+            bookUI.SetActive(true);
+
         if (!coverOpen)
             StartCoroutine(OpenCover());
     }
@@ -73,8 +59,17 @@ public class BookController : MonoBehaviour
     // 🔵 Called when the book is released
     public void OnReleased()
     {
+        if (bookUI != null)
+            bookUI.SetActive(false);
+
         if (coverOpen)
             StartCoroutine(CloseAndResetBook());
+    }
+
+    private void TryFlipPage()
+    {
+        if (coverOpen && !flippingPage)
+            StartCoroutine(FlipPage());
     }
 
     // 📖 Open the front cover
@@ -104,10 +99,8 @@ public class BookController : MonoBehaviour
     {
         coverOpen = false;
 
-        // Wait a short delay before closing
         yield return new WaitForSeconds(0.5f);
 
-        // 1️⃣ Smoothly close the cover
         Transform pivot = coverPivot != null ? coverPivot : frontCover;
         Quaternion start = pivot.localRotation;
         Quaternion end = Quaternion.identity;
@@ -121,7 +114,7 @@ public class BookController : MonoBehaviour
         }
         pivot.localRotation = end;
 
-        // 2️⃣ Reset all pages to flat
+        // Reset all pages
         for (int i = 0; i < pagesParent.childCount; i++)
         {
             Transform page = pagesParent.GetChild(i);
@@ -129,17 +122,14 @@ public class BookController : MonoBehaviour
             page.localPosition = Vector3.zero;
         }
 
-        // 3️⃣ Reset page pivot rotation
         if (pagePivot != null)
             pagePivot.localRotation = Quaternion.identity;
 
-        // 4️⃣ Reset page index so we start from beginning again
         currentPageIndex = 0;
-
         flippingPage = false;
     }
 
-    // 📄 Flip the next page (starts from lowest in hierarchy)
+    // 📄 Flip the next page
     private IEnumerator FlipPage()
     {
         if (pagesParent == null || pagesParent.childCount == 0 || pagePivot == null)
@@ -164,14 +154,12 @@ public class BookController : MonoBehaviour
                 step = totalAngle - rotated;
 
             page.RotateAround(pagePivot.position, pagePivot.TransformDirection(axis), direction * step);
-
             rotated += step;
             yield return null;
         }
 
         page.SetSiblingIndex(pagesParent.childCount - 1);
         currentPageIndex++;
-
         flippingPage = false;
     }
 
