@@ -25,11 +25,23 @@ public class AudioGroupUI : MonoBehaviour
 
     private void Start()
     {
+        // Find tagged sources
         dialogSources = FindAudioSources(dialogTag);
         sfxSources = FindAudioSources(sfxTag);
         musicSources = FindAudioSources(musicTag);
         ambientSources = FindAudioSources(ambientTag);
 
+        // Initial values (0.5 for mid volume)
+        if (masterSlider) masterSlider.value = 0.5f;
+        if (dialogSlider) dialogSlider.value = 0.5f;
+        if (sfxSlider) sfxSlider.value = 0.5f;
+        if (musicSlider) musicSlider.value = 0.5f;
+        if (ambientSlider) ambientSlider.value = 0.5f;
+
+        // Apply volumes at start
+        ApplyAllVolumes();
+
+        // Add listeners
         if (masterSlider) masterSlider.onValueChanged.AddListener(SetMasterVolume);
         if (dialogSlider) dialogSlider.onValueChanged.AddListener((v) => SetVolume(dialogSources, v));
         if (sfxSlider) sfxSlider.onValueChanged.AddListener((v) => SetVolume(sfxSources, v));
@@ -60,7 +72,11 @@ public class AudioGroupUI : MonoBehaviour
     private void SetMasterVolume(float v)
     {
         masterVolume = v;
-        // Re-apply all group sliders at current values
+        ApplyAllVolumes();
+    }
+
+    private void ApplyAllVolumes()
+    {
         if (dialogSlider) SetVolume(dialogSources, dialogSlider.value);
         if (sfxSlider) SetVolume(sfxSources, sfxSlider.value);
         if (musicSlider) SetVolume(musicSources, musicSlider.value);
