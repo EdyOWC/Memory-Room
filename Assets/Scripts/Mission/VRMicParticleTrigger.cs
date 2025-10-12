@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class VRMicParticleTrigger : MonoBehaviour
 {
@@ -117,4 +117,4 @@ public class VRMicParticleTrigger : MonoBehaviour
         }
         return sum / sampleWindow;
     }
-}
+}

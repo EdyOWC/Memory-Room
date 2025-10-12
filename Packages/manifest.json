@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.nosuchstudio.rtltmpro": "file:D:/ChromeDownloads/RTLTMPro-master/RTLTMPro-master/UPMPackage",
-    "com.unity.burst": "1.8.25",
+    "com.unity.burst": "1.8.14",
     "com.unity.collab-proxy": "2.9.3",
     "com.unity.collections": "2.5.7",
     "com.unity.feature.2d": "2.0.1",
@@ -9,7 +9,7 @@
     "com.unity.feature.vr": "1.0.1",
     "com.unity.inputsystem": "1.14.2",
     "com.unity.learn.iet-framework": "5.0.2",
-    "com.unity.mathematics": "1.3.2",
+    "com.unity.mathematics": "1.3.3",
     "com.unity.multiplayer.center": "1.0.0",
     "com.unity.muse.texture": "1.1.1",
     "com.unity.render-pipelines.core": "17.2.0",
