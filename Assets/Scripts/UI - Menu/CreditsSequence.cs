@@ -28,6 +28,10 @@ public class CreditsSequence : MonoBehaviour
     [Tooltip("Assign your locomotion script(s) here (e.g., ContinuousMoveProviderBase, TeleportationProvider, etc.)")]
     public Behaviour[] locomotionScripts;
 
+    [Header("Objects to Hide During Credits")]
+    [Tooltip("Assign any GameObjects you want to hide during credits (UI, props, etc.)")]
+    public GameObject[] objectsToDisable;
+
     void OnEnable()
     {
         if (autoStart) StartSequence();
@@ -40,8 +44,9 @@ public class CreditsSequence : MonoBehaviour
 
     IEnumerator RunCredits()
     {
-        // 🔒 Disable locomotion at start
+        // 🔒 Disable locomotion & other GOs at start
         SetLocomotionEnabled(false);
+        SetObjectsEnabled(false);
 
         // Opening credits → start black
         // Closing credits → start transparent, fade to white
@@ -58,7 +63,6 @@ public class CreditsSequence : MonoBehaviour
             openingVideo.gameObject.SetActive(true);
             openingVideo.Play();
 
-            // Wait until video finishes
             while (openingVideo.isPlaying)
                 yield return null;
 
@@ -68,24 +72,19 @@ public class CreditsSequence : MonoBehaviour
         // ---- Run through logos/credits ----
         foreach (var entry in credits)
         {
-            // hide all first
             foreach (var c in credits)
                 if (c.creditObject != null) c.creditObject.SetActive(false);
 
             if (entry.creditObject == null) continue;
 
             entry.creditObject.SetActive(true);
-
-            // fade logo in
             CanvasGroup cg = entry.creditObject.GetComponent<CanvasGroup>();
             if (cg == null) cg = entry.creditObject.AddComponent<CanvasGroup>();
+
             yield return FadeCanvas(cg, 0f, 1f);
-
-            // hold
             yield return new WaitForSeconds(entry.displayTime);
-
-            // fade logo out
             yield return FadeCanvas(cg, 1f, 0f);
+
             entry.creditObject.SetActive(false);
         }
 
@@ -95,8 +94,9 @@ public class CreditsSequence : MonoBehaviour
             yield return FadeVignette(1f, 0f);
             gameObject.SetActive(false);
 
-            // 🔓 Re-enable locomotion only for opening
+            // 🔓 Re-enable locomotion & GOs
             SetLocomotionEnabled(true);
+            SetObjectsEnabled(true);
         }
         else if (type == CreditType.Closing)
         {
@@ -104,9 +104,9 @@ public class CreditsSequence : MonoBehaviour
             yield return new WaitForSeconds(quitDelay);
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;   // stops play mode in editor
+            UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();   // quits app in build
+            Application.Quit();
 #endif
         }
     }
@@ -138,10 +138,14 @@ public class CreditsSequence : MonoBehaviour
     private void SetLocomotionEnabled(bool enabled)
     {
         if (locomotionScripts == null) return;
-
         foreach (var script in locomotionScripts)
-        {
             if (script != null) script.enabled = enabled;
-        }
+    }
+
+    private void SetObjectsEnabled(bool enabled)
+    {
+        if (objectsToDisable == null) return;
+        foreach (var obj in objectsToDisable)
+            if (obj != null) obj.SetActive(enabled);
     }
 }
